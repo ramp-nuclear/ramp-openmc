@@ -8,7 +8,7 @@ import numpy as np
 import openmc
 from coremaker.core import Core
 from coremaker.geometries import Box
-from coremaker.grid import cm
+from coremaker.units import cm
 from coremaker.materials import Mixture
 from coremaker.materials.water import make_light_water
 from coremaker.tree import Tree, Node

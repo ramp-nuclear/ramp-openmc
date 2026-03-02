@@ -1,0 +1,5 @@
+__pycache__
+*egg-info
+tests/*/*.csv
+tests/*/*.png
+tests/*/*.npz

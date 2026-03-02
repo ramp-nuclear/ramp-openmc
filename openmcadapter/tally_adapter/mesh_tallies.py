@@ -1,5 +1,4 @@
 from itertools import pairwise
-from typing import Dict
 
 import numpy as np
 import openmc
@@ -188,8 +187,8 @@ def mesh_id(tally: openmc.Tally) -> int:
 
 
 @dispatch(object, object, MeshQuery, object)
-def get_result_from_statepoint(tallies: dict[Query, openmc.Tally], cells_ids: Dict,
-                               query: MeshQuery, named_components: Dict) -> tuple[xr.Dataset]:
+def get_result_from_statepoint(tallies: dict[Query, openmc.Tally], cells_ids: dict,
+                               query: MeshQuery, named_components: dict) -> tuple[xr.Dataset]:
     tally = tallies[query]
     volume_specific = all(score.volume_specific is True
                           for score in query.scores)

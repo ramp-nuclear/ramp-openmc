@@ -14,7 +14,10 @@ from coremaker.mesh import CartesianMesh
 from coremaker.surfaces import Plane
 from coreoperator.example import example_state
 from isotopes import U235, Xe135, Xe136, Xe137, O18, H, O
-from macroxs.macroxs import tabulated_neutron_cross_section, tabulated_photon_cross_section
+try:
+    from macroxs.macroxs import tabulated_neutron_cross_section, tabulated_photon_cross_section
+except ImportError:
+    tabulated_neutron_cross_section = tabulated_photon_cross_section = None
 from more_itertools.more import first
 from corecompute.query import VolumeQuery, KQuery, Score, ReactionScore, TabulatedScore
 from corecompute.query.meshquery import MeshQuery
@@ -26,6 +29,9 @@ from uncertainties import ufloat
 
 from openmcadapter.openmc_oracle import OpenMCOracle, Settings
 from openmcadapter.tally_adapter.burnup_tallies import openmc_particle
+
+
+skip_macro = tabulated_neutron_cross_section is None
 
 
 def test_openmc_particle():
@@ -198,6 +204,7 @@ def test_cartesian_mesh_volume_division(direct):
                        d ** 3, equal_nan=True)
 
 
+@pytest.mark.skipif(skip_macro, reason="Could not locate the macro-XS package")
 def test_compare_tabulated_to_reaction_scores(direct):
     score = ReactionScore(reaction=reactions.Reaction(
         reactions.ProtoReaction(Xe136, reactions.Typus.NGamma, branching={Xe137: 1}), Xe137),
@@ -215,6 +222,7 @@ def test_compare_tabulated_to_reaction_scores(direct):
         assert np.isclose(r1['value'], r2['value'])
 
 
+@pytest.mark.skipif(skip_macro, reason="Could not locate the macro-XS package")
 def test_compare_tabulated_heating_to_heating_tally_of_water():
     """
     This test compares heating computed with the heating score and heating computed using the tabulated

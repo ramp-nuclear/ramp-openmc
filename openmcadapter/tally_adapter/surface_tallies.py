@@ -1,6 +1,6 @@
 from itertools import pairwise
 from pathlib import PurePath
-from typing import Dict, Sequence, List
+from typing import Sequence
 
 import numpy as np
 import openmc
@@ -8,14 +8,16 @@ from coremaker.protocols.component import Component
 from coremaker.surfaces.surfacecache import SurfaceCache
 from multipledispatch import dispatch
 from corecompute.query import Query, SurfaceCurrentQuery
-from corecompute.result import Result
+from corecompute.result import KResult, MeshResult, VolumeResult
 
 from openmcadapter.geometry_adapter.core_adapter import _false
 from openmcadapter.tally_adapter.burnup_tallies import openmc_particle, openmc_energies
 
+Result = KResult | MeshResult | VolumeResult
 
-def surface_current_tally(query: SurfaceCurrentQuery, cells_ids: Dict[PurePath, int],
-                          named_components: Dict[PurePath, Component],
+
+def surface_current_tally(query: SurfaceCurrentQuery, cells_ids: dict[PurePath, int],
+                          named_components: dict[PurePath, Component],
                           geometry: openmc.Geometry, surface_cache: SurfaceCache) \
         -> openmc.Tally:
     """
@@ -58,10 +60,9 @@ def surface_current_tally(query: SurfaceCurrentQuery, cells_ids: Dict[PurePath, 
 
 
 @dispatch(object, object, SurfaceCurrentQuery, object)
-def get_result_from_statepoint(tallies: Dict[Query, openmc.Tally],
-                               cells_ids: Dict[PurePath, Sequence[int]],
-                               query: SurfaceCurrentQuery, named_components: Dict) -> \
-        List[Result]:
+def get_result_from_statepoint(tallies: dict[Query, openmc.Tally],
+                               cells_ids: dict[PurePath, Sequence[int]],
+                               query: SurfaceCurrentQuery, named_components: dict) -> list[Result]:
     answers = []
 
     def _gather_value(value, energy_bin):

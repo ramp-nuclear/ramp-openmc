@@ -12,7 +12,7 @@ import openmc
 from coremaker.protocols.component import Component
 from multipledispatch import dispatch
 from openmcadapter.mixture_adapter import openmc_name
-from corecompute.result import KResult, Result, SurfaceTracksResult
+from corecompute.result import KResult, VolumeResult, SurfaceTracksResult
 from corecompute.query import (
         KQuery, VolumeQuery, SurfaceTracksQuery, TabulatedScore, ReactionScore, 
         Score, Query
@@ -243,7 +243,7 @@ def get_score_results(tally: openmc.Tally,
 def get_result_from_statepoint(tallies: dict[Query, openmc.Tally],
                                cells_ids: dict[PurePath, int],
                                query: VolumeQuery, named_components: dict) -> \
-        list[Result]:
+        list[VolumeResult]:
     tally = tallies[query]
     return list(chain(*(get_score_results(tally, score, query,
                                           cells_ids, named_components)

@@ -26,7 +26,6 @@ classifiers = [
     "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
-    "openmc",
     "multipledispatch",
     "distributed",
     "numpy",

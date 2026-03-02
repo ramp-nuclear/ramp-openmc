@@ -1,0 +1,3 @@
+dependencies:
+  - pytest
+  - pytest-regressions

@@ -8,7 +8,7 @@ from coremaker.geometries import Box
 from coremaker.protocols.geometry import Geometry
 from coremaker.units import cm
 from multipledispatch import dispatch
-from openmc.source import Source as OpenMCSource
+from openmc.source import IndependentSource as OpenMCSource
 from reactions.particle import Particle, Neutron
 
 from openmcadapter.tally_adapter.burnup_tallies import openmc_particle

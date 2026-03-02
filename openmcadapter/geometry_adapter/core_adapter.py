@@ -2,7 +2,7 @@
 This modules contains functions to transform a RAMP Core to an openmc model
 """
 from pathlib import PurePath
-from typing import Callable, Dict, Optional, Sequence, Tuple
+from typing import Callable, Optional, Sequence
 
 import coremaker.geometries.box
 import numpy as np
@@ -49,7 +49,7 @@ def openmc_lattice(lattice: CartesianLattice, transform: Transform, path: PurePa
     return lat
 
 
-def place_rod_in_lattice(rod: Element, grid: Grid, site: str, cells: Dict,
+def place_rod_in_lattice(rod: Element, grid: Grid, site: str, cells: dict,
                          lattices: Sequence[openmc.Lattice], surface_cache: SurfaceCache = None,
                          library_path=None):
     """
@@ -60,7 +60,7 @@ def place_rod_in_lattice(rod: Element, grid: Grid, site: str, cells: Dict,
     ----------
     core - the Core
     site - the site of the rod to place
-    cells - Dict of cells ids
+    cells - dict of cells ids
     lattices - the sequence of openmc lattices which contains the lattice in
                 which the rod should be inserted.
     """
@@ -120,10 +120,11 @@ def _default_source_func(model):
         lower_left[-1] = -1
     if upper_right[-1] == np.inf:
         upper_right[-1] = 1
-    return openmc.Source(
+    return openmc.IndependentSource(
         space=openmc.stats.Box(np.hstack([lower_left]),
-                               np.hstack([upper_right]),
-                               only_fissionable=True))
+                               np.hstack([upper_right])),
+        constraints=dict(fissionable=True)
+        )
 
 
 def _false(*_, **__): return False
@@ -131,10 +132,10 @@ def _false(*_, **__): return False
 
 def openmc_core_to_model(core: Core, boundary_condition: str,
                          source_func: Callable[
-                             [openmc.model.Model], openmc.Source]
+                             [openmc.model.Model], openmc.IndependentSource]
                          = _default_source_func,
-                         temperature_method="interpolation", library_path=None) -> Tuple[
-    openmc.model.Model, Dict, SurfaceCache]:
+                         temperature_method="interpolation", library_path=None) -> tuple[
+    openmc.model.Model, dict, SurfaceCache]:
     """
     function that creates an openmc model which represents a RAMP core.
     Parameters

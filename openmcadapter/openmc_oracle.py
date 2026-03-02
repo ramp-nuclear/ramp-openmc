@@ -8,7 +8,7 @@ from contextlib import redirect_stdout
 from dataclasses import dataclass, field, replace
 from functools import partial
 from pathlib import Path, PurePath
-from typing import Optional, Callable, Tuple, Dict, Literal, Any, Sequence
+from typing import Optional, Callable, Literal, Any, Sequence
 
 import openmc
 from coremaker.core import Core
@@ -23,7 +23,7 @@ from openmcadapter.tally_adapter.mesh_tallies import meshtally_from_meshquery
 from openmcadapter.tally_adapter.power_computation_tallies import power_tally
 from openmcadapter.tally_adapter.surface_tallies import surface_current_tally
 from corecompute.oracle import OracleResult
-from ramp.runners.utils import TemporaryDirectory
+from ramp_core import TemporaryDirectory
 from corecompute.query import (
         VolumeQuery, SurfaceTracksQuery, MeshQuery, Query, KQuery, 
         HeatingRateQuery, SurfaceCurrentQuery
@@ -32,7 +32,7 @@ from corecompute.query import (
 logger = logging.getLogger(__name__)
 
 
-def _workspace(path: Optional[Path]) -> Tuple[Optional[Path], bool]:
+def _workspace(path: Optional[Path]) -> tuple[Optional[Path], bool]:
     return (path, False) if path else (None, True)
 
 
@@ -71,11 +71,14 @@ class Settings:
     def threads(self):
         return None
 
+
 class OpenMCOracle:
 
     def __init__(self,
                  settings: Optional[Settings] = None,
-                 *, save_workspace: Optional[Path] = None,
+                 *, 
+                 save_workspace: Optional[Path] = None,
+                 tasks: int = 1,
                  boundary_condition="vacuum"):
         self.default_boundary_condition = boundary_condition
         self.settings = settings or Settings(10000, 150, run_mode='eigenvalue', passive_cycles=30)
@@ -123,8 +126,8 @@ def _model(core: Core,
            queries: Sequence[Query],
            settings: Settings, boundary_condition: str,
            extra_tallies: Optional[
-               Callable[[openmc.model.Model, Dict], Tuple[
-                   openmc.model.Model, Dict]]] = None) -> tuple[openmc.model.Model, dict, dict, dict, list, None | Path]:
+               Callable[[openmc.model.Model, dict], tuple[
+                   openmc.model.Model, dict]]] = None) -> tuple[openmc.model.Model, dict, dict, dict, list, None | Path]:
     """
     This function's purpose is to combine all methods of interpreting RAMP objects as OpenMC objects.
     """
@@ -231,8 +234,8 @@ def run_openmc(state: OperationalState,
                boundary_condition: str = "vacuum",
                cleanup=False,
                extra_tallies: Optional[
-                   Callable[[openmc.model.Model, Dict], Tuple[
-                       openmc.model.Model, Dict]]] = None) -> OracleResult:
+                   Callable[[openmc.model.Model, dict], tuple[
+                       openmc.model.Model, dict]]] = None) -> OracleResult:
     """
     This function performs an openmc calculation, saves the results and returns
     results to the queries.
