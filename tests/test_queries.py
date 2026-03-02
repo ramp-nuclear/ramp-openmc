@@ -16,10 +16,10 @@ from coreoperator.example import example_state
 from isotopes import U235, Xe135, Xe136, Xe137, O18, H, O
 from macroxs.macroxs import tabulated_neutron_cross_section, tabulated_photon_cross_section
 from more_itertools.more import first
-from ramp.transport import VolumeQuery, KQuery, Score, ReactionScore, TabulatedScore
-from ramp.transport.query.meshquery import MeshQuery
-from ramp.transport.query.powerquery import HeatingRateQuery
-from ramp.transport.query.surfacequery import SurfaceCurrentQuery
+from corecompute.query import VolumeQuery, KQuery, Score, ReactionScore, TabulatedScore
+from corecompute.query.meshquery import MeshQuery
+from corecompute.query.powerquery import HeatingRateQuery
+from corecompute.query.surfacequery import SurfaceCurrentQuery
 from reactions import Neutron, Photon
 from toolz import valmap
 from uncertainties import ufloat

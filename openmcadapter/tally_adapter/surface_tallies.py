@@ -7,8 +7,8 @@ import openmc
 from coremaker.protocols.component import Component
 from coremaker.surfaces.surfacecache import SurfaceCache
 from multipledispatch import dispatch
-from ramp.transport import Query, Result
-from ramp.transport.query.surfacequery import SurfaceCurrentQuery
+from corecompute.query import Query, SurfaceCurrentQuery
+from corecompute.result import Result
 
 from openmcadapter.geometry_adapter.core_adapter import _false
 from openmcadapter.tally_adapter.burnup_tallies import openmc_particle, openmc_energies

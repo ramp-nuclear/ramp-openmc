@@ -5,16 +5,18 @@ a Batman
 import time
 from itertools import pairwise, product, chain
 from pathlib import PurePath
-from typing import Sequence, Dict, List, Iterable
+from typing import Sequence, Iterable
 
 import numpy as np
 import openmc
 from coremaker.protocols.component import Component
 from multipledispatch import dispatch
 from openmcadapter.mixture_adapter import openmc_name
-from ramp.transport import KResult, Result, Score, ReactionScore, \
-    Query, SurfaceTracksQuery, SurfaceTracksResult, TabulatedScore
-from ramp.transport.query import KQuery, VolumeQuery
+from corecompute.result import KResult, Result, SurfaceTracksResult
+from corecompute.query import (
+        KQuery, VolumeQuery, SurfaceTracksQuery, TabulatedScore, ReactionScore, 
+        Score, Query
+        )
 from reactions import Typus, Neutron, Photon, Electron, Proton,Positron
 from reactions.particle import NamedParticle
 from reactions.reaction import eV
@@ -125,7 +127,7 @@ def openmc_energies(energies: Sequence[eV]) -> Sequence[eV]:
         return energies
 
 
-def openmc_query_tally(query: VolumeQuery, cells_ids: Dict[PurePath, int]) \
+def openmc_query_tally(query: VolumeQuery, cells_ids: dict[PurePath, int]) \
         -> openmc.Tally:
     """
     function that creates an openmc tally from a RAMP query and returns it.
@@ -155,8 +157,8 @@ def openmc_query_tally(query: VolumeQuery, cells_ids: Dict[PurePath, int]) \
 
 
 @dispatch(object, object, KQuery, object)
-def get_result_from_statepoint(tallies: Dict, cells: Dict,
-                               query: KQuery, named_components: Dict) -> \
+def get_result_from_statepoint(tallies: dict, cells: dict,
+                               query: KQuery, named_components: dict) -> \
         Sequence[KResult]:
     k, k_series = tallies["k"]
     return KResult(k.nominal_value, k.std_dev), k_series
@@ -238,10 +240,10 @@ def get_score_results(tally: openmc.Tally,
 
 
 @dispatch(object, object, VolumeQuery, object)
-def get_result_from_statepoint(tallies: Dict[Query, openmc.Tally],
-                               cells_ids: Dict[PurePath, int],
-                               query: VolumeQuery, named_components: Dict) -> \
-        List[Result]:
+def get_result_from_statepoint(tallies: dict[Query, openmc.Tally],
+                               cells_ids: dict[PurePath, int],
+                               query: VolumeQuery, named_components: dict) -> \
+        list[Result]:
     tally = tallies[query]
     return list(chain(*(get_score_results(tally, score, query,
                                           cells_ids, named_components)
@@ -249,8 +251,8 @@ def get_result_from_statepoint(tallies: Dict[Query, openmc.Tally],
 
 
 @dispatch(object, object, SurfaceTracksQuery, object)
-def get_result_from_statepoint(tallies: Dict[Query, openmc.Tally],
-                               cells_ids: Dict[PurePath, int],
-                               query: SurfaceTracksQuery, named_components: Dict) -> \
+def get_result_from_statepoint(tallies: dict[Query, openmc.Tally],
+                               cells_ids: dict[PurePath, int],
+                               query: SurfaceTracksQuery, named_components: dict) -> \
         SurfaceTracksResult:
     return SurfaceTracksResult(query.path, time.localtime(), SurfaceTracksResult.compute_filehash(query.path))

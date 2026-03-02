@@ -22,12 +22,12 @@ from openmcadapter.tally_adapter.burnup_tallies import openmc_query_tally, \
 from openmcadapter.tally_adapter.mesh_tallies import meshtally_from_meshquery
 from openmcadapter.tally_adapter.power_computation_tallies import power_tally
 from openmcadapter.tally_adapter.surface_tallies import surface_current_tally
-from ramp.oracle.oracle import OracleResult
+from corecompute.oracle import OracleResult
 from ramp.runners.utils import TemporaryDirectory
-from ramp.transport import VolumeQuery, SurfaceTracksQuery, MeshQuery
-from ramp.transport.query import Query, KQuery
-from ramp.transport.query.powerquery import HeatingRateQuery
-from ramp.transport.query.surfacequery import SurfaceCurrentQuery
+from corecompute.query import (
+        VolumeQuery, SurfaceTracksQuery, MeshQuery, Query, KQuery, 
+        HeatingRateQuery, SurfaceCurrentQuery
+        )
 
 logger = logging.getLogger(__name__)
 

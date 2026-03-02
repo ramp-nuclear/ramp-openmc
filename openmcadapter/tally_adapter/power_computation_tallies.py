@@ -1,6 +1,6 @@
 import openmc
 from multipledispatch import dispatch
-from ramp.transport.query.powerquery import HeatingRateQuery
+from corecompute.query.powerquery import HeatingRateQuery
 from scipy.constants import eV
 
 

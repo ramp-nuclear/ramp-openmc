@@ -10,7 +10,7 @@ from coremaker.transform import identity
 from multipledispatch import dispatch
 from openmcadapter.tally_adapter.burnup_tallies import openmc_score, openmc_energies, openmc_particle, \
     tabulated_filter
-from ramp.transport import MeshQuery, Query
+from corecompute.query import MeshQuery, Query
 
 cm = float
 
