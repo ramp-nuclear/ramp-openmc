@@ -1,0 +1,10 @@
+dependencies:
+  - openmc
+  - multipledispatch
+  - distributed
+  - numpy
+  - matplotlib
+  - cytoolz
+  - xarray
+  - scipy
+
