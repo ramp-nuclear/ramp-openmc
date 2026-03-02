@@ -1,0 +1,49 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ramp-openmc"
+authors = [
+    {name = "Nuclear RAMP team", email = "nuclear.ramp.dev@gmail.com"},
+]
+description = "Adapter package for OpenMC as an Oracle"
+dynamic = ["version"]
+requires-python = ">=3.11"
+license = {file = "LICENSE"}
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: End Users/Desktop",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Topic :: Scientific/Engineering",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+]
+dependencies = [
+    "openmc",
+    "multipledispatch",
+    "distributed",
+    "numpy",
+    "matplotlib",
+    "cytoolz",
+    "xarray",
+    "scipy"
+]
+
+[project.optional-dependencies]
+test = [
+    "hypothesis",
+    "pytest",
+]
+
+[tool.setuptools.packages.find]
+include = ['openmcadapter*']
+exclude = ['tests*']
+
+[tool.setuptools_scm]
