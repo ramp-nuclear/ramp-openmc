@@ -132,4 +132,4 @@ def test_box_adaptation():
     geometry = Box(np.zeros(3), 2 * np.ones(3))
     comp = ConcreteComponent(mixture, geometry)
     assert str(
-        openmc_component(comp).region) == "(1 2 3 X X 6)"
+        openmc_component(comp).region) == "(1 2 3 4 5 6)"

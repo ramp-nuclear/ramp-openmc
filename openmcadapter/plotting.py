@@ -30,7 +30,7 @@ STRUCTURE = Core | Tree | Geometry
 DEFAULT_PIXELS_NUM = 400
 DEFAULT_COLOR = 'blue'
 # relative to figure size.
-AXES_LIMIT = (X.XX, 0.09, 0.775, 0.775)
+AXES_LIMIT = (0.15, 0.09, 0.775, 0.775)
 
 
 def _get_limits(origin: tuple[cm, cm, cm],

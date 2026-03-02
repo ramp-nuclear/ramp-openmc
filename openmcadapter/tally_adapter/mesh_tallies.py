@@ -200,13 +200,13 @@ def get_result_from_statepoint(tallies: dict[Query, openmc.Tally], cells_ids: Di
         case SphericalMesh():
             if volume_specific:
                 raise NotImplementedError("volume specific spherical mesh tally is not supported yet")
-            # TODO: implement this option in a XXXX way
+            # TODO: implement this option in a real way
             # A temporary default implementation
             res = df.to_xarray()
         case CylindricalMesh():
             if volume_specific:
                 raise NotImplementedError("volume specific cylindrical mesh tally is not supported yet")
-            # TODO: implement this option in a XXXX way
+            # TODO: implement this option in a real way
             # A temporary default implementation
             res = df.to_xarray()
     return res,

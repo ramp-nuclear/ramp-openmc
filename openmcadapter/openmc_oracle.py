@@ -78,7 +78,7 @@ class OpenMCOracle:
                  *, save_workspace: Optional[Path] = None,
                  boundary_condition="vacuum"):
         self.default_boundary_condition = boundary_condition
-        self.settings = settings or Settings(10000, XXX, run_mode='eigenvalue', passive_cycles=30)
+        self.settings = settings or Settings(10000, 150, run_mode='eigenvalue', passive_cycles=30)
         self.tasks = tasks
         d, cleanup = _workspace(save_workspace)
         self.direct = partial(
