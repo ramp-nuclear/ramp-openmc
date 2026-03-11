@@ -1,3 +1,6 @@
 dependencies:
   - pytest
   - pytest-regressions
+  - more-itertools
+  - uncertainties
+  - numpy

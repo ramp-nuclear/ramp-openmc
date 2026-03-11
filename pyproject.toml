@@ -32,7 +32,8 @@ dependencies = [
     "matplotlib",
     "cytoolz",
     "xarray",
-    "scipy"
+    "scipy",
+    "pandas",
 ]
 
 [project.optional-dependencies]

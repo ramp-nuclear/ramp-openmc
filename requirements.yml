@@ -1,5 +1,5 @@
 dependencies:
-  - openmc
+  - openmc >= 0.13.3
   - multipledispatch
   - distributed
   - numpy
@@ -7,4 +7,5 @@ dependencies:
   - cytoolz
   - xarray
   - scipy
+  - pandas
 

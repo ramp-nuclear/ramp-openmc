@@ -9,14 +9,14 @@ from coremaker.protocols.geometry import Geometry
 from coremaker.units import cm
 from multipledispatch import dispatch
 from openmc.source import IndependentSource as OpenMCSource
-from reactions.particle import Particle, Neutron
+from reactions.particle import Neutron, Particle
 
 from openmcadapter.tally_adapter.burnup_tallies import openmc_particle
 
 
 @dispatch(Geometry)
 def uniform_distribution(geometry: Geometry) -> openmc.stats.Spatial:
-    raise NotImplemented(f"A uniform distribution over a geometry of type {type(geometry)} is not implemented")
+    raise NotImplementedError(f"A uniform distribution over a geometry of type {type(geometry)} is not implemented")
 
 
 @dispatch(Box)
@@ -45,6 +45,7 @@ class PointSource:
     particle: Particle
         source particle
     """
+
     location: tuple[cm, cm, cm]
     energy: openmc.stats.Univariate
     particle: Particle = Neutron
@@ -61,15 +62,16 @@ class PointsSource:
 class ComponentSource:
     """A points source that spews particles isotropically at some energy distribution.
 
-        Parameters
-        ----------
-        component: dict[PurePath, float] | PurePath
-            The component to sample uniformly in.
-        energy: Distribution[eV]
-            The emission energy, in eV.
-        particle: Particle
-            source particle
-        """
+    Parameters
+    ----------
+    component: dict[PurePath, float] | PurePath
+        The component to sample uniformly in.
+    energy: Distribution[eV]
+        The emission energy, in eV.
+    particle: Particle
+        source particle
+    """
+
     component: PurePath
     energy: openmc.stats.Univariate
     particle: Particle = Neutron
@@ -79,15 +81,16 @@ class ComponentSource:
 class ComponentDependentSource:
     """A points source that spews particles isotropically at some energy distribution.
 
-        Parameters
-        ----------
-        components: dict[PurePath, float] | PurePath
-            Mapping between the components to sample uniformly in and their corresponding relative weights
-        energy: Distribution[eV]
-            The emission energy, in eV.
-        particle: Particle
-            source particle
-        """
+    Parameters
+    ----------
+    components: dict[PurePath, float] | PurePath
+        Mapping between the components to sample uniformly in and their corresponding relative weights
+    energy: Distribution[eV]
+        The emission energy, in eV.
+    particle: Particle
+        source particle
+    """
+
     components: dict[PurePath, float]
     energy: openmc.stats.Univariate
     particle: Particle = Neutron
@@ -97,15 +100,16 @@ class ComponentDependentSource:
 class UniformSource:
     """A points source that spews particles isotropically at some energy distribution.
 
-        Parameters
-        ----------
-        mesh: dict[Geometry, float]
-            Mapping between the components to sample uniformly in and their corresponding relative weights
-        energy: Distribution[eV]
-            The emission energy, in eV.
-        particle: Particle
-            source particle
-        """
+    Parameters
+    ----------
+    geometry: Geometry
+        The geometry where this source exists.
+    energy: Distribution[eV]
+        The emission energy, in eV.
+    particle: Particle
+        source particle
+    """
+
     geometry: Geometry
     energy: openmc.stats.Univariate
     particle: Particle = Neutron
@@ -115,22 +119,24 @@ class UniformSource:
 class MeshSource:
     """A points source that spews particles isotropically at some energy distribution.
 
-        Parameters
-        ----------
-        mesh: dict[Geometry, float]
-            Mapping between the components to sample uniformly in and their corresponding relative weights
-        energy: Distribution[eV]
-            The emission energy, in eV.
-        particle: Particle
-            source particle
-        """
+    Parameters
+    ----------
+    mesh: dict[Geometry, float]
+        Mapping between the components to sample uniformly in and their corresponding relative weights
+    energy: Distribution[eV]
+        The emission energy, in eV.
+    particle: Particle
+        source particle
+    """
+
     mesh: dict[Geometry, float]
     energy: openmc.stats.Univariate
     particle: Particle = Neutron
 
 
-Source = OpenMCSource | PointSource | PointsSource | ComponentSource | ComponentDependentSource | UniformSource \
-         | MeshSource
+Source = (
+    OpenMCSource | PointSource | PointsSource | ComponentSource | ComponentDependentSource | UniformSource | MeshSource
+)
 
 
 @dispatch(OpenMCSource, Core)
@@ -139,12 +145,12 @@ def openmc_source(source: OpenMCSource, _) -> OpenMCSource:
 
 
 @dispatch(list, Core)
-def openmc_source(sources: list[Source], _) -> list[OpenMCSource]:
+def openmc_source(sources: list[Source], _) -> list[OpenMCSource]:  # noqa
     return list(map(openmc_source, sources))
 
 
 @dispatch(PointSource, Core)
-def openmc_source(source: PointSource, _) -> OpenMCSource:
+def openmc_source(source: PointSource, _) -> OpenMCSource:  # noqa
     s = openmc.Source()
     s.space = openmc.stats.Point(xyz=source.location)
     s.energy = source.energy
@@ -153,47 +159,49 @@ def openmc_source(source: PointSource, _) -> OpenMCSource:
 
 
 @dispatch(PointsSource, Core)
-def openmc_source(source: PointsSource, _) -> list[OpenMCSource]:
+def openmc_source(source: PointsSource, _) -> list[OpenMCSource]:  # noqa
     def _source(location: tuple[cm, cm, cm]) -> Source:
         s = openmc_source(PointSource(location, source.energy, source.particle), _)
         s.strength = source.locations[location]
         return s
+
     return list(map(_source, source.locations.keys()))
 
 
 @dispatch(UniformSource, Core)
-def openmc_source(source: UniformSource, _):
-    s = openmc.Source()
-    s.space = uniform_distribution(source.geometry)
-    s.energy = source.energy
-    s.particle = openmc_particle(source.particle)
-    return s
+def openmc_source(source: UniformSource, _):  # noqa
+    return uniform_geometry_source(source, source.geometry)
 
 
 @dispatch(MeshSource, Core)
-def openmc_source(source: MeshSource, _):
+def openmc_source(source: MeshSource, _):  # noqa
     def _source(geo: Geometry) -> Source:
         s = openmc_source(UniformSource(geo, source.energy, source.particle), _)
         s.strength = source.mesh[geo]
         return s
+
     return list(map(_source, source.mesh.keys()))
 
 
 @dispatch(ComponentSource, Core)
-def openmc_source(source: ComponentSource, core: Core) -> OpenMCSource:
-    s = openmc.Source()
-    s.energy = source.energy
-    s.particle = openmc_particle(source.particle)
-    s.space = uniform_distribution(core.geometry_of(source.component))
-    return s
+def openmc_source(source: ComponentSource, core: Core) -> OpenMCSource:  # noqa
+    return uniform_geometry_source(source, core.geometry_of(source.component))
 
 
 @dispatch(ComponentDependentSource, Core)
-def openmc_source(source: ComponentDependentSource, core: Core) -> list[OpenMCSource]:
+def openmc_source(source: ComponentDependentSource, core: Core) -> list[OpenMCSource]:  # noqa
 
     def _source(comp: PurePath) -> Source:
         s = openmc_source(ComponentSource(comp, source.energy, source.particle), core)
         s.strength = source.components[comp]
         return s
+
     return list(map(_source, source.components.keys()))
 
+
+def uniform_geometry_source(source: Source, geo: Geometry) -> OpenMCSource:
+    s = openmc.Source()
+    s.energy = source.energy
+    s.particle = openmc_particle(source.particle)
+    s.space = uniform_distribution(geo)
+    return s
