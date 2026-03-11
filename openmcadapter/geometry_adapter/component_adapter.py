@@ -1,20 +1,20 @@
 import warnings
 from contextlib import contextmanager
-from typing import Sequence, Optional, Type
+from typing import Optional, Sequence, Type
 
 import numpy as np
 import openmc
-from coremaker.geometries.box import Box
-from coremaker.protocols.component import Component
 from coremaker.component import ConcreteComponent
+from coremaker.geometries.box import Box
+from coremaker.materials.mixture import Mixture
+from coremaker.protocols.component import Component
 from coremaker.protocols.geometry import Geometry, HoledGeometry, UnionGeometry
 from coremaker.surfaces.surfacecache import SurfaceCache
 from isotopes import U235
-from coremaker.materials.mixture import Mixture
 from openmc import IDWarning
 
 from openmcadapter.geometry_adapter.surface_adapter import openmc_halfspace
-from openmcadapter.mixture_adapter import openmc_material, add_burning_isotopes
+from openmcadapter.mixture_adapter import add_burning_isotopes, openmc_material
 
 
 def negate_surface(expresion_format: str, surface_num):
@@ -25,13 +25,12 @@ def negate_surface(expresion_format: str, surface_num):
     the surface specified by surface_num will be accompanied by a minus
     sign.
     """
-    split_format = expresion_format.split('%d')
-    split_format[surface_num] += '-'
-    return '%d'.join(split_format)
+    split_format = expresion_format.split("%d")
+    split_format[surface_num] += "-"
+    return "%d".join(split_format)
 
 
-def construct_region(expression_format: str,
-                     half_spaces: Sequence[tuple[int, openmc.Halfspace]]) -> openmc.Region:
+def construct_region(expression_format: str, half_spaces: Sequence[tuple[int, openmc.Halfspace]]) -> openmc.Region:
     """
     this function gets a format and an iterable of half spaces and
     computes the region specified by them. Since in the ramp the
@@ -46,10 +45,8 @@ def construct_region(expression_format: str,
         to_negate = to_negate ^ (hs.side == "-")
         if to_negate:
             expression_format = negate_surface(expression_format, surface_num)
-    region_expression = expression_format % tuple([surface.surface.id
-                                                   for _, surface in half_spaces])
-    return openmc.Region.from_expression(region_expression,
-                                         {hs.surface.id: hs.surface for _, hs in half_spaces})
+    region_expression = expression_format % tuple([surface.surface.id for _, surface in half_spaces])
+    return openmc.Region.from_expression(region_expression, {hs.surface.id: hs.surface for _, hs in half_spaces})
 
 
 @contextmanager
@@ -78,25 +75,29 @@ def openmc_region(geometry: Geometry, surface_cache: Optional[SurfaceCache] = No
     -------
     openmc.Region
     """
-    if surface_cache:
-        surface_to_use = lambda surface: surface_cache.find_surface(surface, None)
-    else:
-        surface_to_use = lambda surface: (None, surface)
-    surfaces_to_use = [surface_to_use(surface) for surface in geometry.surfaces]
+    surfaces_to_use = (
+        [surface_cache.find_surface(surface, None) for surface in geometry.surfaces]
+        if surface_cache
+        else [(None, surface) for surface in geometry.surfaces]
+    )
 
     # OpenMC emits an IDWarning when comparing with cached Surface ids, such as:
     # ...openmc/mixin.py:70: IDWarning: Another Surface instance already exists with id=311
     # We want to override the ids as to not create duplicates of surfaces when converting
     # RAMP cores to OpenMC models more than once. Hence, we ignore the emitted warning.
     with ignore_warnings(IDWarning):
-        return construct_region(format_creation(geometry),
-                                [(index, openmc_halfspace(surface, abs(index) if index else index)) for
-                                 index, surface in
-                                 surfaces_to_use])
+        return construct_region(
+            format_creation(geometry),
+            [(index, openmc_halfspace(surface, abs(index) if index else index)) for index, surface in surfaces_to_use],
+        )
 
 
-def openmc_component(component: Component, name: str = None,
-                     surface_cache: SurfaceCache = None, library_path=None) -> openmc.Cell:
+def openmc_component(
+    component: Component,
+    name: str = None,
+    surface_cache: SurfaceCache = None,
+    library_path=None,
+) -> openmc.Cell:
     """
     This function creates an openmc cell from a RAMP component and returns it
     Parameters
@@ -110,18 +111,25 @@ def openmc_component(component: Component, name: str = None,
     """
     region = openmc_region(component.geometry, surface_cache)
     add_burning_isotopes(component.mixture)
-    cell = openmc.Cell(region=region, fill=openmc_material(component.mixture, library_path=library_path),
-                       name=name)
+    cell = openmc.Cell(
+        region=region,
+        fill=openmc_material(component.mixture, library_path=library_path),
+        name=name,
+    )
     return cell
 
 
 def format_creation(geometry: Geometry | HoledGeometry | UnionGeometry):
     if isinstance(geometry, HoledGeometry):
-        return ("(" + format_creation(geometry.inclusive) + "~" + "(" + "|".join(
-            f"{format_creation(hole)}" for hole in geometry.exclusives))[:-1] + ") ) "
+        return (
+            "("
+            + format_creation(geometry.inclusive)
+            + "~"
+            + "("
+            + "|".join(f"{format_creation(hole)}" for hole in geometry.exclusives)
+        )[:-1] + ") ) "
     elif isinstance(geometry, UnionGeometry):
-        return ("(" + "|".join(
-            f"{format_creation(geo)}" for geo in geometry.geometries))[:-1] + ") "
+        return ("(" + "|".join(f"{format_creation(geo)}" for geo in geometry.geometries))[:-1] + ") "
     if len(geometry.surfaces) > 0:
         return ("(" + "%d " * len(geometry.surfaces))[:-1] + ") "
     return ""
@@ -129,7 +137,6 @@ def format_creation(geometry: Geometry | HoledGeometry | UnionGeometry):
 
 def test_box_adaptation():
     mixture = Mixture({U235: 1}, 293)
-    geometry = Box(np.zeros(3), 2 * np.ones(3))
+    geometry = Box((0.0, 0.0, 0.0), 2 * np.ones(3))
     comp = ConcreteComponent(mixture, geometry)
-    assert str(
-        openmc_component(comp).region) == "(1 2 3 4 5 6)"
+    assert str(openmc_component(comp).region) == "(1 2 3 4 5 6)"
