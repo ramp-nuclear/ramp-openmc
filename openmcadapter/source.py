@@ -20,7 +20,7 @@ def uniform_distribution(geometry: Geometry) -> openmc.stats.Spatial:
 
 
 @dispatch(Box)
-def uniform_distribution(box: Box) -> openmc.stats.Spatial:
+def uniform_distribution(box: Box) -> openmc.stats.Spatial:  # noqa
     """
     Generate a uniform distribution in the region of a box.
     For the case the box is rotated, sample uniformly over the smallest bounding box that is not rotated, instead.

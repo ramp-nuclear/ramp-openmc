@@ -9,6 +9,7 @@ from coremaker.materials.zirconium import zircalloy_2, zircalloy_4
 from openmcadapter.mixture_adapter import openmc_material
 
 
+@pytest.mark.regression
 @pytest.mark.parametrize(
     "mix",
     [

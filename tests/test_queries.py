@@ -96,8 +96,10 @@ def test_oracle_does_not_crash_with_queries(direct, queries):
     return results
 
 
+@pytest.mark.regression
+@pytest.mark.slow
 def test_results_are_sensible(results, uranium_paths, queries, scores, ndarrays_regression):
-    assert type(results) == dict
+    assert type(results) is dict
     assert set(results.keys()) == set(queries.values())
     for path in uranium_paths:
         for name, score in zip(["flux", "reaction"], scores):
@@ -162,7 +164,7 @@ def test_surface_currents_equal_mesh_surface_currents_by_example(direct):
     surface_down = Plane(0, 1, 0, -(lattice_limits[1] * 3 / 4 - hafnium_block_size / 2))
     query1 = SurfaceCurrentQuery(surface_down, to_component=PurePath("CoreTree/pool/south_hafnium_block"))
 
-    def mesh_tally(model, cells):
+    def mesh_tally(model, *_, **__):
         mesh = openmc.RegularMesh()
         bottom_hafnium_block_center = np.array([0.0, -lattice_limits[1] * 3 / 4, 0.0])
         hafnium_block_dimensions = np.array([hafnium_block_size, hafnium_block_size, hafnium_block_height])
@@ -269,7 +271,5 @@ def test_compare_tabulated_heating_to_heating_tally_of_water():
     s = ufloat(0, 0)
     for iso, q in neutron_tabulated_queries.items():
         s += ufloat(results[q][0]["value"] * expanded_water[iso], results[q][0]["error"] * expanded_water[iso])
-    assert (
-        np.abs(s.nominal_value * results[kq][0].k - results[heating_neutron_query][0]["value"])
-        < results[heating_neutron_query][0]["error"]
-    )
+    qresult = results[heating_neutron_query][0]
+    assert np.abs(s.nominal_value * results[kq][0].k - qresult["value"]) < qresult["error"]
