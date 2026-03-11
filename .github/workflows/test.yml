@@ -43,7 +43,7 @@ jobs:
     - name: make requirements for tests
       run: |
         cp requirements.yml allreq.yml
-        tail -n +2 tests_requirements >> allreq.yml
+        tail -n +2 tests_requirements.yml >> allreq.yml
     - name: setup-micromamba
       uses: mamba-org/setup-micromamba@v2.0.6
       with:
