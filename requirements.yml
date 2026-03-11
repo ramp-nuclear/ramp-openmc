@@ -8,4 +8,5 @@ dependencies:
   - xarray
   - scipy
   - pandas
+  - python <= 3.13
 
