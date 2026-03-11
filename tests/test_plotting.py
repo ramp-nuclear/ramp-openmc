@@ -3,7 +3,7 @@ from pathlib import Path, PurePath
 
 import pytest
 from coremaker.core import Core
-from coremaker.elements import BoxTree
+from coremaker.elements.box import BoxTree
 from coremaker.example import (
     U_mixture,
     aluminium,

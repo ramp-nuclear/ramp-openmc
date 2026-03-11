@@ -25,14 +25,16 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
 ]
 dependencies = [
-    "multipledispatch",
-    "distributed",
-    "numpy",
-    "matplotlib",
     "cytoolz",
-    "xarray",
-    "scipy",
+    "distributed",
+    "matplotlib",
+    "multipledispatch",
+    "numpy",
     "pandas",
+    "ramp-coremaker",
+    "ramp-corecompute",
+    "scipy",
+    "xarray",
 ]
 
 [project.optional-dependencies]

@@ -143,7 +143,9 @@ def _default_source_func(model) -> openmc.IndependentSource:
     time to create an initial source of that shape.
     """
     if not model.geometry.get_all_lattices():
-        return openmc.IndepenedentSource(space=openmc.stats.Box((-1, -1, -1), (1, 1, 1), only_fissionable=True))
+        return openmc.IndependentSource(
+            space=openmc.stats.Box((-1, -1, -1), (1, 1, 1)), constraints={"fissionable": True}
+        )
     lower_left = np.min(
         np.vstack([lattice.outer.bounding_box[0] for lattice in model.geometry.get_all_lattices().values()]),
         axis=0,
@@ -157,7 +159,7 @@ def _default_source_func(model) -> openmc.IndependentSource:
     if upper_right[-1] == np.inf:
         upper_right[-1] = 1
     return openmc.IndependentSource(
-        space=openmc.stats.Box(lower_left.flatten(), upper_right.flatten(), only_fissionable=True)
+        space=openmc.stats.Box(lower_left.flatten(), upper_right.flatten()), constraints={"fissionable": True}
     )
 
 

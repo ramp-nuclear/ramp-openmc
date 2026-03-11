@@ -18,7 +18,6 @@ def surface_current_tally(
     query: SurfaceCurrentQuery,
     cells_ids: dict[PurePath, int],
     named_components: dict[PurePath, Component],
-    geometry: openmc.Geometry,
     surface_cache: SurfaceCache,
 ) -> openmc.Tally:
     """

@@ -200,8 +200,9 @@ def openmc_source(source: ComponentDependentSource, core: Core) -> list[OpenMCSo
 
 
 def uniform_geometry_source(source: Source, geo: Geometry) -> OpenMCSource:
-    s = openmc.Source()
-    s.energy = source.energy
-    s.particle = openmc_particle(source.particle)
-    s.space = uniform_distribution(geo)
+    s = openmc.IndependentSource(
+        space=uniform_distribution(geo),
+        energy=source.energy,
+        particle=openmc_particle(source.particle),
+    )
     return s
