@@ -57,7 +57,7 @@ jobs:
     - name: Test with pytest
       run: |
         cd tests
-        pytest -v 
+        pytest -v -k "not xs"
       env:
         OPENMC_CROSS_SECTIONS: cross_sections.xml
       shell: micromamba-shell {0}

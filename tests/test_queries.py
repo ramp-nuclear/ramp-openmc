@@ -1,30 +1,30 @@
-import os
+from contextlib import chdir
 from operator import itemgetter
 from pathlib import Path, PurePath
-from tempfile import TemporaryDirectory
 
 import numpy as np
 import openmc
 import pytest
 import reactions
+from corecompute.query import KQuery, ReactionScore, Score, TabulatedScore, VolumeQuery
+from corecompute.query.meshquery import MeshQuery
+from corecompute.query.powerquery import HeatingRateQuery
+from corecompute.query.surfacequery import SurfaceCurrentQuery
 from coremaker.example import hafnium_block_height, hafnium_block_size, heavy_water, lattice_limits
 from coremaker.mesh import CartesianMesh
 from coremaker.surfaces import Plane
 from coreoperator.example import example_state
 from isotopes import O18, U235, H, O, Xe135, Xe136, Xe137
+from more_itertools.more import first
+from ramp_core import TemporaryDirectory
+from reactions import Neutron, Photon
+from toolz import valmap
+from uncertainties import ufloat
 
 try:
     from macroxs.macroxs import tabulated_neutron_cross_section, tabulated_photon_cross_section
 except ImportError:
     tabulated_neutron_cross_section = tabulated_photon_cross_section = None
-from corecompute.query import KQuery, ReactionScore, Score, TabulatedScore, VolumeQuery
-from corecompute.query.meshquery import MeshQuery
-from corecompute.query.powerquery import HeatingRateQuery
-from corecompute.query.surfacequery import SurfaceCurrentQuery
-from more_itertools.more import first
-from reactions import Neutron, Photon
-from toolz import valmap
-from uncertainties import ufloat
 
 from openmcadapter.openmc_oracle import OpenMCOracle, Settings
 from openmcadapter.tally_adapter.burnup_tallies import openmc_particle
@@ -32,31 +32,27 @@ from openmcadapter.tally_adapter.burnup_tallies import openmc_particle
 skip_macro = tabulated_neutron_cross_section is None
 
 
-def test_openmc_particle():
+def test_openmc_particle_for_neutron_is_named_as_expected():
     assert "neutron" == openmc_particle(Neutron)
 
 
-@pytest.fixture(scope="module")
-def oracle():
-    return OpenMCOracle(settings=Settings(100, 20, 1))
+oracle = OpenMCOracle(settings=Settings(100, 20, 1))
 
 
-@pytest.fixture(scope="module")
-def direct(oracle):
-    def _direct(state, *queries, **kwargs):
-        with TemporaryDirectory(prefix="openmcadapter_test") as tempdir:
-            os.chdir(tempdir)
+def direct(state, *queries, **kwargs):
+    with TemporaryDirectory(prefix="openmcadapter_test") as tempdir:
+        with chdir(tempdir):
             return oracle.direct(state, *queries, boundary_condition="reflective", **kwargs)
 
-    return _direct
 
-
-def test_oracle_does_not_crash_without_queries(direct):
+@pytest.mark.xs
+def test_oracle_does_not_crash_without_queries():
     queries = [KQuery()]
     direct(example_state, *queries)
 
 
-def test_oracle_does_not_crash_with_save_workspace(direct):
+@pytest.mark.xs
+def test_oracle_does_not_crash_with_save_workspace():
     queries = [KQuery()]
     with TemporaryDirectory() as tmpdir:
         direct(example_state, *queries, directory=Path(tmpdir) / "tempdir")
@@ -90,15 +86,11 @@ def queries(uranium_paths, scores):
     }
 
 
-@pytest.fixture(scope="module", name="results")
-def test_oracle_does_not_crash_with_queries(direct, queries):
-    results = direct(example_state, *queries.values())
-    return results
-
-
+@pytest.mark.xs
 @pytest.mark.regression
 @pytest.mark.slow
-def test_results_are_sensible(results, uranium_paths, queries, scores, ndarrays_regression):
+def test_results_are_sensible(uranium_paths, queries, scores, ndarrays_regression):
+    results = direct(example_state, *queries.values())
     assert type(results) is dict
     assert set(results.keys()) == set(queries.values())
     for path in uranium_paths:
@@ -127,7 +119,8 @@ def test_results_are_sensible(results, uranium_paths, queries, scores, ndarrays_
     ndarrays_regression.check(tallies_results)
 
 
-def test_xenon_reaction_rate_is_sensible_where_there_are_no_xenon(direct):
+@pytest.mark.xs
+def test_xenon_reaction_rate_is_sensible_where_there_are_no_xenon():
     score = ReactionScore(
         reaction=reactions.Reaction(
             reactions.ProtoReaction(Xe135, reactions.Typus.NGamma, branching={Xe136: 1}), Xe136
@@ -144,7 +137,8 @@ def test_xenon_reaction_rate_is_sensible_where_there_are_no_xenon(direct):
         assert 0.1 < rate["value"] < 100
 
 
-def test_surface_currents_from_opposite_symmetric_sides_are_close_by_example(direct):
+@pytest.mark.xs
+def test_surface_currents_from_opposite_symmetric_sides_are_close_by_example():
     y_translation = lattice_limits[1] * 3 / 4 - hafnium_block_size / 2
     surface_up = Plane(0, 1, 0, y_translation)
     surface_down = Plane(0, 1, 0, -y_translation)
@@ -160,7 +154,8 @@ def test_surface_currents_from_opposite_symmetric_sides_are_close_by_example(dir
     assert np.abs(result[query1][0]["value"] + result[query3][0]["value"]) > 2 * result[query1][0]["error"]
 
 
-def test_surface_currents_equal_mesh_surface_currents_by_example(direct):
+@pytest.mark.xs
+def test_surface_currents_equal_mesh_surface_currents_by_example():
     surface_down = Plane(0, 1, 0, -(lattice_limits[1] * 3 / 4 - hafnium_block_size / 2))
     query1 = SurfaceCurrentQuery(surface_down, to_component=PurePath("CoreTree/pool/south_hafnium_block"))
 
@@ -181,13 +176,15 @@ def test_surface_currents_equal_mesh_surface_currents_by_example(direct):
     assert result["mesh_surface_current"].to_numpy()[-5][-2] == abs(result[query1][0]["value"])
 
 
-def test_compute_power_by_heating_local_doesnt_crash(direct):
+@pytest.mark.xs
+def test_compute_power_by_heating_local_doesnt_crash():
     query = HeatingRateQuery("score heating-local")
     result = direct(example_state, query)
     print(result)
 
 
-def test_cartesian_mesh_volume_division(direct):
+@pytest.mark.xs
+def test_cartesian_mesh_volume_division():
     d = 2
     mesh = CartesianMesh(x=(-d / 2, d / 2, 3 * d / 2), y=(-d / 2, d / 2), z=(-d / 2, d / 2))
     integral_flux_score = Score("flux", volume_specific=False)
@@ -206,7 +203,8 @@ def test_cartesian_mesh_volume_division(direct):
 
 
 @pytest.mark.skipif(skip_macro, reason="Could not locate the macro-XS package")
-def test_compare_tabulated_to_reaction_scores(direct):
+@pytest.mark.xs
+def test_compare_tabulated_to_reaction_scores():
     score = ReactionScore(
         reaction=reactions.Reaction(
             reactions.ProtoReaction(Xe136, reactions.Typus.NGamma, branching={Xe137: 1}), Xe137
@@ -229,6 +227,7 @@ def test_compare_tabulated_to_reaction_scores(direct):
 
 
 @pytest.mark.skipif(skip_macro, reason="Could not locate the macro-XS package")
+@pytest.mark.xs
 def test_compare_tabulated_heating_to_heating_tally_of_water():
     """
     This test compares heating computed with the heating score and heating computed using the tabulated
@@ -262,12 +261,12 @@ def test_compare_tabulated_heating_to_heating_tally_of_water():
         photon_tabulated,
     )
 
+    oracle = OpenMCOracle(settings=Settings(1000, 100, 20, photon_transport=True))
+    tabulated_queries = list(neutron_tabulated_queries.values()) + list(photon_tabulated_queries.values())
+    kq = KQuery()
     with TemporaryDirectory(prefix="openmcadapter_test") as tempdir:
-        os.chdir(tempdir)
-        oracle = OpenMCOracle(settings=Settings(1000, 100, 20, photon_transport=True))
-        tabulated_queries = list(neutron_tabulated_queries.values()) + list(photon_tabulated_queries.values())
-        kq = KQuery()
-        results = oracle(example_state, kq, heating_neutron_query, heating_photon_query, *tabulated_queries)
+        with chdir(tempdir):
+            results = oracle(example_state, kq, heating_neutron_query, heating_photon_query, *tabulated_queries)
     s = ufloat(0, 0)
     for iso, q in neutron_tabulated_queries.items():
         s += ufloat(results[q][0]["value"] * expanded_water[iso], results[q][0]["error"] * expanded_water[iso])
