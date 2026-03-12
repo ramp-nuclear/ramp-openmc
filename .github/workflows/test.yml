@@ -36,10 +36,14 @@ jobs:
         python3 -c "from openmcadapter import OpenMCOracle"
       shell: micromamba-shell {0}
 
-  build:
+  test:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
+    - name: Make requirements file
+      run: |
+        cp requirements.yml allreq.yml
+        tail -n +2 tests_requirements.yml >> allreq.yml
     - name: setup-micromamba
       uses: mamba-org/setup-micromamba@v2.0.6
       with:
