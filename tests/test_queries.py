@@ -14,7 +14,7 @@ from coremaker.example import hafnium_block_height, hafnium_block_size, heavy_wa
 from coremaker.mesh import CartesianMesh
 from coremaker.surfaces import Plane
 from coreoperator.example import example_state
-from isotopes import O18, U235, H, O, Xe135, Xe136, Xe137
+from isotopes import O18, U234, U235, H, O, Xe135, Xe136
 from more_itertools.more import first
 from ramp_core import TemporaryDirectory
 from reactions import Neutron, Photon
@@ -30,13 +30,23 @@ from openmcadapter.openmc_oracle import OpenMCOracle, Settings
 from openmcadapter.tally_adapter.burnup_tallies import openmc_particle
 
 skip_macro = tabulated_neutron_cross_section is None
+data_missing = not (Path(__file__).parent / "xs_data" / "U235.h5").exists()
 
 
 def test_openmc_particle_for_neutron_is_named_as_expected():
     assert "neutron" == openmc_particle(Neutron)
 
 
-oracle = OpenMCOracle(settings=Settings(100, 20, 1))
+oracle = OpenMCOracle(
+    settings=Settings(
+        100,
+        20,
+        1,
+        temperature_method="nearest",
+        temperature_tolerance=1000.0,
+        seed=47563747,
+    )
+)
 
 
 def direct(state, *queries, **kwargs):
@@ -45,13 +55,19 @@ def direct(state, *queries, **kwargs):
             return oracle.direct(state, *queries, boundary_condition="reflective", **kwargs)
 
 
-@pytest.mark.xs
+skip_if_no_data = pytest.mark.skipif(
+    condition=data_missing, reason="Could not find cross sections. Use the unfold_xs.sh script under xs_data."
+)
+skip_if_no_macroxs = pytest.mark.skipif(condition=skip_macro, reason="Could not locate the macro-XS package")
+
+
+@skip_if_no_data
 def test_oracle_does_not_crash_without_queries():
     queries = [KQuery()]
     direct(example_state, *queries)
 
 
-@pytest.mark.xs
+@skip_if_no_data
 def test_oracle_does_not_crash_with_save_workspace():
     queries = [KQuery()]
     with TemporaryDirectory() as tmpdir:
@@ -86,7 +102,7 @@ def queries(uranium_paths, scores):
     }
 
 
-@pytest.mark.xs
+@skip_if_no_data
 @pytest.mark.regression
 @pytest.mark.slow
 def test_results_are_sensible(uranium_paths, queries, scores, ndarrays_regression):
@@ -119,7 +135,7 @@ def test_results_are_sensible(uranium_paths, queries, scores, ndarrays_regressio
     ndarrays_regression.check(tallies_results)
 
 
-@pytest.mark.xs
+@skip_if_no_data
 def test_xenon_reaction_rate_is_sensible_where_there_are_no_xenon():
     score = ReactionScore(
         reaction=reactions.Reaction(
@@ -137,7 +153,7 @@ def test_xenon_reaction_rate_is_sensible_where_there_are_no_xenon():
         assert 0.1 < rate["value"] < 100
 
 
-@pytest.mark.xs
+@skip_if_no_data
 def test_surface_currents_from_opposite_symmetric_sides_are_close_by_example():
     y_translation = lattice_limits[1] * 3 / 4 - hafnium_block_size / 2
     surface_up = Plane(0, 1, 0, y_translation)
@@ -154,7 +170,7 @@ def test_surface_currents_from_opposite_symmetric_sides_are_close_by_example():
     assert np.abs(result[query1][0]["value"] + result[query3][0]["value"]) > 2 * result[query1][0]["error"]
 
 
-@pytest.mark.xs
+@skip_if_no_data
 def test_surface_currents_equal_mesh_surface_currents_by_example():
     surface_down = Plane(0, 1, 0, -(lattice_limits[1] * 3 / 4 - hafnium_block_size / 2))
     query1 = SurfaceCurrentQuery(surface_down, to_component=PurePath("CoreTree/pool/south_hafnium_block"))
@@ -176,14 +192,14 @@ def test_surface_currents_equal_mesh_surface_currents_by_example():
     assert result["mesh_surface_current"].to_numpy()[-5][-2] == abs(result[query1][0]["value"])
 
 
-@pytest.mark.xs
+@skip_if_no_data
 def test_compute_power_by_heating_local_doesnt_crash():
     query = HeatingRateQuery("score heating-local")
     result = direct(example_state, query)
     print(result)
 
 
-@pytest.mark.xs
+@skip_if_no_data
 def test_cartesian_mesh_volume_division():
     d = 2
     mesh = CartesianMesh(x=(-d / 2, d / 2, 3 * d / 2), y=(-d / 2, d / 2), z=(-d / 2, d / 2))
@@ -202,13 +218,11 @@ def test_cartesian_mesh_volume_division():
     )
 
 
-@pytest.mark.skipif(skip_macro, reason="Could not locate the macro-XS package")
-@pytest.mark.xs
+@skip_if_no_macroxs
+@skip_if_no_data
 def test_compare_tabulated_to_reaction_scores():
     score = ReactionScore(
-        reaction=reactions.Reaction(
-            reactions.ProtoReaction(Xe136, reactions.Typus.NGamma, branching={Xe137: 1}), Xe137
-        ),
+        reaction=reactions.Reaction(reactions.ProtoReaction(U234, reactions.Typus.NGamma, branching={U235: 1}), U235),
         volume_specific=True,
         density_specific=True,
     )
@@ -216,7 +230,7 @@ def test_compare_tabulated_to_reaction_scores():
         scores=tuple([score]),
         names=tuple([path for path, comp in example_state.core.named_components if U235 in comp.mixture]),
     )
-    tabulated = tabulated_neutron_cross_section(Xe136, 102)
+    tabulated = tabulated_neutron_cross_section(U234, 102)
     tabulated_query = VolumeQuery(
         names=tuple([path for path, comp in example_state.core.named_components if U235 in comp.mixture]),
         scores=(TabulatedScore(tuple(tabulated.x), tuple(tabulated.y), True),),
@@ -226,8 +240,8 @@ def test_compare_tabulated_to_reaction_scores():
         assert np.isclose(r1["value"], r2["value"])
 
 
-@pytest.mark.skipif(skip_macro, reason="Could not locate the macro-XS package")
-@pytest.mark.xs
+@skip_if_no_macroxs
+@skip_if_no_data
 def test_compare_tabulated_heating_to_heating_tally_of_water():
     """
     This test compares heating computed with the heating score and heating computed using the tabulated

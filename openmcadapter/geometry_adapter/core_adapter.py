@@ -172,6 +172,7 @@ def openmc_core_to_model(
     boundary_condition: str,
     source_func: Callable[[openmc.model.Model], openmc.IndependentSource] = _default_source_func,
     temperature_method="interpolation",
+    temperature_tolerance: float = None,
     library_path=None,
 ) -> tuple[openmc.model.Model, dict, SurfaceCache]:
     """
@@ -185,6 +186,9 @@ def openmc_core_to_model(
     temperature_method - Literal['nearest', 'interpolation']
         The method used to determine materials' temperature,
         default is set to `interpolation`.
+    temperature_tolerance - Degrees Kelvin
+        The tolerance if the method is "nearest". See OpenMC documentation for details.
+        If None, uses OpenMC defaults.
 
     Returns
     -------
@@ -254,6 +258,11 @@ def openmc_core_to_model(
     model.materials = root_universe.get_all_materials().values()
     model.materials.cross_sections = library_path
     model.settings.source = source_func(model)
-    model.settings.temperature = dict(method=temperature_method)
+    tolerance = (
+        {"tolerance": temperature_tolerance}
+        if temperature_method == "nearest" and temperature_tolerance is not None
+        else {}
+    )
+    model.settings.temperature = dict(method=temperature_method) | tolerance
     model.settings.survival_biasing = True
     return model, cells, surface_cache

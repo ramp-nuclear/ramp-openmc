@@ -51,7 +51,9 @@ class Settings:
     histories: int
     cycles: int
     passive_cycles: int = 0
+    seed: int = None
     temperature_method: Literal["nearest", "interpolation"] = "interpolation"
+    temperature_tolerance: float = None
     photon_transport: bool = False
     surface_source_path: Path = None
     # Should be given as absolute path.
@@ -148,7 +150,11 @@ def _model(
     This function's purpose is to combine all methods of interpreting RAMP objects as OpenMC objects.
     """
     model, cells_ids, surface_cache = openmc_core_to_model(
-        core, boundary_condition, temperature_method=settings.temperature_method, library_path=settings.library_xml_path
+        core,
+        boundary_condition,
+        temperature_method=settings.temperature_method,
+        temperature_tolerance=settings.temperature_tolerance,
+        library_path=settings.library_xml_path,
     )
     if extra_tallies:
         model, tallies = extra_tallies(model, cells_ids)
@@ -158,6 +164,8 @@ def _model(
         extra_keys = None
     model.settings.batches = settings.cycles
     model.settings.inactive = settings.passive_cycles
+    if settings.seed is not None:
+        model.settings.seed = settings.seed
     model.settings.particles = settings.histories
     model.settings.photon_transport = settings.photon_transport
     model.settings.run_mode = settings.run_mode
