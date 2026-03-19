@@ -41,6 +41,7 @@ dependencies = [
 test = [
     "hypothesis",
     "pytest",
+    "pytest-regressions",
 ]
 
 [tool.setuptools.packages.find]
