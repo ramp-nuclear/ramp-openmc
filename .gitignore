@@ -4,3 +4,4 @@ __pycache__
 tests/*/*.csv
 tests/*/*.png
 tests/*/*.npz
+tests/*/*.h5

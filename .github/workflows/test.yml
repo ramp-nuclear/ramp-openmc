@@ -36,3 +36,33 @@ jobs:
         python3 -c "from openmcadapter import OpenMCOracle"
       shell: micromamba-shell {0}
 
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Make requirements file
+      run: |
+        cp requirements.yml allreq.yml
+        tail -n +2 tests_requirements.yml >> allreq.yml
+    - name: setup-micromamba
+      uses: mamba-org/setup-micromamba@v2.0.6
+      with:
+        environment-file: allreq.yml
+        environment-name: openmcadapter-test-${{ github.run_id }}-${{ github.run_attempt }}
+        post-cleanup: 'all'
+    - name: Install package
+      run: |
+        pip install .[test]
+      shell: micromamba-shell {0}
+    - name: Unpack cross sections
+      run: |
+        cd tests/xs_data
+        ./unfold_xs.sh
+        cd ../../
+    - name: Test with pytest
+      run: |
+        cd tests
+        pytest -v
+      env:
+        OPENMC_CROSS_SECTIONS: cross_sections.xml
+      shell: micromamba-shell {0}

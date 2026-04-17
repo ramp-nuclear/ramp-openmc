@@ -1,0 +1,23 @@
+<?xml version='1.0' encoding='utf-8'?>
+<cross_sections>
+  <library materials="H2" path="xs_data/H2.h5" type="neutron" />
+  <library materials="O16" path="xs_data/O16.h5" type="neutron" />
+  <library materials="O17" path="xs_data/O17.h5" type="neutron" />
+  <library materials="Al27" path="xs_data/Al27.h5" type="neutron" />
+  <library materials="Zr90" path="xs_data/Zr90.h5" type="neutron" />
+  <library materials="Zr91" path="xs_data/Zr91.h5" type="neutron" />
+  <library materials="Zr92" path="xs_data/Zr92.h5" type="neutron" />
+  <library materials="Zr94" path="xs_data/Zr94.h5" type="neutron" />
+  <library materials="Zr96" path="xs_data/Zr96.h5" type="neutron" />
+  <library materials="Xe135" path="xs_data/Xe135.h5" type="neutron" />
+  <library materials="Hf174" path="xs_data/Hf174.h5" type="neutron" />
+  <library materials="Hf176" path="xs_data/Hf176.h5" type="neutron" />
+  <library materials="Hf177" path="xs_data/Hf177.h5" type="neutron" />
+  <library materials="Hf178" path="xs_data/Hf178.h5" type="neutron" />
+  <library materials="Hf179" path="xs_data/Hf179.h5" type="neutron" />
+  <library materials="Hf180" path="xs_data/Hf180.h5" type="neutron" />
+  <library materials="U234" path="xs_data/U234.h5" type="neutron" />
+  <library materials="U235" path="xs_data/U235.h5" type="neutron" />
+  <library materials="U238" path="xs_data/U238.h5" type="neutron" />
+  <library materials="c_D_in_D2O" path="xs_data/c_D_in_D2O.h5" type="thermal" />
+</cross_sections>
